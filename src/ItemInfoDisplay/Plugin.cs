@@ -177,19 +177,19 @@ public partial class Plugin : BaseUnityPlugin
 
         if (itemGameObj.name.Equals("Bugle(Clone)"))
         {
-            itemInfoDisplayTextMesh.text += "MAKE SOME NOISE\n";
+            itemInfoDisplayTextMesh.text += "圍着隊友吹響它吧！\n";
         }
         else if (itemGameObj.name.Equals("Pirate Compass(Clone)"))
         {
-            itemInfoDisplayTextMesh.text += effectColors["Injury"] + "POINTS</color> TO THE NEAREST LUGGAGE\n";
+            itemInfoDisplayTextMesh.text += effectColors["Injury"] + "指向</color>最近的行李箱\n";
         }
         else if (itemGameObj.name.Equals("Compass(Clone)"))
         {
-            itemInfoDisplayTextMesh.text += effectColors["Injury"] + "POINTS</color> NORTH TO THE PEAK\n";
+            itemInfoDisplayTextMesh.text += effectColors["Injury"] + "指向</color>山頂\n";
         }
         else if (itemGameObj.name.Equals("Shell Big(Clone)"))
         {
-            itemInfoDisplayTextMesh.text += "TRY " + effectColors["Hunger"] + "THROWING</color> AT A COCONUT\n";
+            itemInfoDisplayTextMesh.text += "試試把它" + effectColors["Hunger"] + "丟向</color>椰子w\n";
         }
 
         for (int i = 0; i < itemComponents.Length; i++)
@@ -293,10 +293,10 @@ public partial class Plugin : BaseUnityPlugin
             {
                 Lantern lantern = (Lantern)itemComponents[i];
                 if (itemGameObj.name.Equals("Torch(Clone)")){
-                    itemInfoDisplayTextMesh.text += "CAN BE LIT\n";
+                    itemInfoDisplayTextMesh.text += "可被點亮\n";
                 }
                 else {
-                    suffixAfflictions += "<#CCCCCC>WHEN LIT, NEARBY PLAYERS RECEIVE:</color>\n";
+                        suffixAfflictions += "<#CCCCCC>點亮時，附近的玩家會獲得：</color>\n";
                 }
 
                 if (itemGameObj.name.Equals("Lantern_Faerie(Clone)"))
@@ -322,7 +322,7 @@ public partial class Plugin : BaseUnityPlugin
             {
                 Action_RaycastDart effect = (Action_RaycastDart)itemComponents[i];
                 isConsumable = true;
-                suffixAfflictions += "<#CCCCCC>SHOOT A DART THAT WILL APPLY:</color>\n";
+                suffixAfflictions += "<#CCCCCC>發射一支飛鏢，造成以下效果：</color>\n";
                 for (int j = 0; j < effect.afflictionsOnHit.Length; j++)
                 {
                     suffixAfflictions += ProcessAffliction(effect.afflictionsOnHit[j]);
@@ -340,34 +340,34 @@ public partial class Plugin : BaseUnityPlugin
             }
             else if (itemComponents[i].GetType() == typeof(MagicBugle))
             {
-                itemInfoDisplayTextMesh.text += "WHILE PLAYING THE BUGLE,";
+                itemInfoDisplayTextMesh.text += "當吹響友誼號角時，\n";
             }
             else if (itemComponents[i].GetType() == typeof(ClimbingSpikeComponent))
             {
-                itemInfoDisplayTextMesh.text += "PLACE A PITON YOU CAN GRAB\nTO " + effectColors["Extra Stamina"] + "REGENERATE STAMINA</color>\n";
+                itemInfoDisplayTextMesh.text += "放置一個你可以抓住的岩釘\n來 " + effectColors["Extra Stamina"] + "恢復士氣</color>\n";
             }
             else if (itemComponents[i].GetType() == typeof(Action_Flare))
             {
-                itemInfoDisplayTextMesh.text += "CAN BE LIT\n";
+                itemInfoDisplayTextMesh.text += "可被點亮\n";
             }
             else if (itemComponents[i].GetType() == typeof(Backpack))
             {
-                itemInfoDisplayTextMesh.text += "DROP TO PLACE ITEMS INSIDE\n";
+                itemInfoDisplayTextMesh.text += "放下背包才可放入物品\n";
             }
             else if (itemComponents[i].GetType() == typeof(BananaPeel))
             {
-                itemInfoDisplayTextMesh.text += effectColors["Hunger"] + "SLIP</color> WHEN STEPPED ON\n";
+                itemInfoDisplayTextMesh.text += "踩到後會" + effectColors["Hunger"] + "滑倒</color>\n";
             }
             else if (itemComponents[i].GetType() == typeof(Constructable))
             {
                 Constructable effect = (Constructable)itemComponents[i];
                 if (effect.constructedPrefab.name.Equals("PortableStovetop_Placed"))
                 {
-                    itemInfoDisplayTextMesh.text += "PLACE A " + effectColors["Injury"] + "COOKING</color> STOVE FOR " + effect.constructedPrefab.GetComponent<Campfire>().burnsFor.ToString() + "s\n";
+                    itemInfoDisplayTextMesh.text += "放置" + effectColors["Injury"] + "攜帶式爐具</color>以提供" + effect.constructedPrefab.GetComponent<Campfire>().burnsFor.ToString() + "秒的溫暖\n";
                 }
                 else
                 {
-                    itemInfoDisplayTextMesh.text += "CAN BE PLACED\n";
+                    itemInfoDisplayTextMesh.text += "可被放置\n";
                 }
             }
             else if (itemComponents[i].GetType() == typeof(RopeSpool))
@@ -375,51 +375,54 @@ public partial class Plugin : BaseUnityPlugin
                 RopeSpool effect = (RopeSpool)itemComponents[i];
                 if (effect.isAntiRope)
                 {
-                    itemInfoDisplayTextMesh.text += "PLACE A ROPE THAT FLOATS UP\n";
+                    itemInfoDisplayTextMesh.text += "放置一條向上漂浮的繩索\n";
                 }
                 else
                 {
-                    itemInfoDisplayTextMesh.text += "PLACE A ROPE\n";
+                    itemInfoDisplayTextMesh.text += "放置一條繩索\n";
                 }
-                itemInfoDisplayTextMesh.text += "FROM " + (effect.minSegments / 4f).ToString("F2").Replace(".0", "") + "m LONG, UP TO " 
-                    + (Rope.MaxSegments / 4f).ToString("F1").Replace(".0", "") + "m LONG\n";
+                itemInfoDisplayTextMesh.text += "綁繩結最短需" + (effect.minSegments / 4f).ToString("F2").Replace(".0", "") + "公尺長，最多" 
+                    + (Rope.MaxSegments / 4f).ToString("F1").Replace(".0", "") + "公尺長\n";
                 //using force update here for remaining length since Rope has no character distinction for Detach_Rpc() hook, maybe unless OK with any player triggering this
                 if (configForceUpdateTime.Value <= 1f)
                 {
-                    suffixUses += "   " + (effect.RopeFuel / 4f).ToString("F2").Replace(".00", "") + "m LEFT";
+                    suffixUses += "   剩餘" + (effect.RopeFuel / 4f).ToString("F2").Replace(".00", "") + "公尺";
                 }
             }
             else if (itemComponents[i].GetType() == typeof(RopeShooter))
             {
                 RopeShooter effect = (RopeShooter)itemComponents[i];
-                itemInfoDisplayTextMesh.text += "SHOOT A ROPE ANCHOR WHICH PLACES\nA ROPE THAT ";
+                // 發射一條繩索錨，並放置一條繩子 …
+                itemInfoDisplayTextMesh.text += "發射一條";
                 if (effect.ropeAnchorWithRopePref.name.Equals("RopeAnchorForRopeShooterAnti"))
                 {
-                    itemInfoDisplayTextMesh.text += "FLOATS UP ";
+                    // 向上漂浮（上升繩）
+                    itemInfoDisplayTextMesh.text += (effect.maxLength / 4f).ToString("F1").Replace(".0", "") + "公尺長" + effectColors["Cold"] + "向上漂浮</color>的繩子\n";
                 }
                 else
                 {
-                    itemInfoDisplayTextMesh.text += "DROPS DOWN ";
+                    // 一般下降繩
+                    itemInfoDisplayTextMesh.text += (effect.maxLength / 4f).ToString("F1").Replace(".0", "") + "公尺長的繩子\n";
                 }
-                itemInfoDisplayTextMesh.text += (effect.maxLength / 4f).ToString("F1").Replace(".0", "") + "m\n";
+                itemInfoDisplayTextMesh.text += (effect.maxLength / 4f).ToString("F1").Replace(".0", "") + "公尺\n";
             }
             else if (itemComponents[i].GetType() == typeof(Antigrav))
             {
                 Antigrav effect = (Antigrav)itemComponents[i];
                 if (effect.intensity != 0f)
                 {
-                    suffixAfflictions += effectColors["Injury"] + "WARNING:</color> <#CCCCCC>FLIES AWAY IF DROPPED</color>\n";
+                    suffixAfflictions += effectColors["Injury"] + "警告：</color><#CCCCCC>放下後會飛走</color>\n";
                 }
             }
             else if (itemComponents[i].GetType() == typeof(Action_Balloon))
             {
-                suffixAfflictions += "CAN ATTACH TO CHARACTER\n";
+                suffixAfflictions += "可以綁在玩家身上\n";
             }
             else if (itemComponents[i].GetType() == typeof(VineShooter))
             {
                 VineShooter effect = (VineShooter)itemComponents[i];
-                itemInfoDisplayTextMesh.text += "SHOOT A CHAIN THAT CONNECTS FROM\nYOUR POSITION TO WHERE YOU SHOOT\nUP TO "
-                    + (effect.maxLength / (5f / 3f)).ToString("F1").Replace(".0", "") + "m AWAY\n";
+                itemInfoDisplayTextMesh.text += "從當前位置發射一條鏈條到你瞄準的地方\n最長可達"
+                    + (effect.maxLength / (5f / 3f)).ToString("F1").Replace(".0", "") + "公尺\n";
             }
             else if (itemComponents[i].GetType() == typeof(ShelfShroom))
             {
@@ -433,7 +436,7 @@ public partial class Plugin : BaseUnityPlugin
                     AOE[] effect2AOEs = effect2.GetComponents<AOE>();
                     TimeEvent effect2TimeEvent = effect2.GetComponent<TimeEvent>();
                     RemoveAfterSeconds effect2RemoveAfterSeconds = effect2.GetComponent<RemoveAfterSeconds>();
-                    itemInfoDisplayTextMesh.text += effectColors["Hunger"] + "THROW</color> TO RELEASE GAS THAT WILL:\n";
+                    itemInfoDisplayTextMesh.text += effectColors["Hunger"] + "丟出</color>後會釋放出氣體，效果為：\n";
                     itemInfoDisplayTextMesh.text += ProcessEffect((Mathf.Round(effect1AOE.statusAmount * 0.9f * 40f) / 40f), effect1AOE.statusType.ToString()); // incorrect? calculates strangely so i somewhat manually adjusted the values
                     itemInfoDisplayTextMesh.text += ProcessEffectOverTime((Mathf.Round(effect2AOE.statusAmount * (1f / effect2TimeEvent.rate) * 40f) / 40f), 1f, effect2RemoveAfterSeconds.seconds, effect2AOE.statusType.ToString()); // incorrect?
                     if (effect2AOEs.Length > 1)
@@ -443,99 +446,99 @@ public partial class Plugin : BaseUnityPlugin
                 }
                 else if (effect.instantiateOnBreak.name.Equals("ShelfShroomSpawn"))
                 {
-                    itemInfoDisplayTextMesh.text += effectColors["Hunger"] + "THROW</color> TO DEPLOY A PLATFORM\n";
+                    itemInfoDisplayTextMesh.text += effectColors["Hunger"] + "丟出</color>後會生成一個平台\n";
                 }
                 else if (effect.instantiateOnBreak.name.Equals("BounceShroomSpawn"))
                 {
-                    itemInfoDisplayTextMesh.text += effectColors["Hunger"] + "THROW</color> TO DEPLOY A BOUNCE PAD\n";
+                    itemInfoDisplayTextMesh.text += effectColors["Hunger"] + "丟出</color>後會生成一個彈跳墊\n";
                 }
             }
             else if (itemComponents[i].GetType() == typeof(ScoutEffigy))
             {
-                itemInfoDisplayTextMesh.text += effectColors["Extra Stamina"] + "REVIVE</color> A DEAD PLAYER\n";
+                itemInfoDisplayTextMesh.text += effectColors["Extra Stamina"] + "復活</color>一名死亡的玩家\n";
             }
             else if (itemComponents[i].GetType() == typeof(Action_Die))
             {
-                itemInfoDisplayTextMesh.text += "YOU " + effectColors["Curse"] + "DIE</color> WHEN USED\n";
+                itemInfoDisplayTextMesh.text += "用了就" + effectColors["Curse"] + "死翹翹</color>了\n";
             }
             else if (itemComponents[i].GetType() == typeof(Action_SpawnGuidebookPage))
             {
                 isConsumable = true;
-                itemInfoDisplayTextMesh.text += "CAN BE OPENED\n";
+                itemInfoDisplayTextMesh.text += "可被開啟\n";
             }
             else if (itemComponents[i].GetType() == typeof(Action_Guidebook))
             {
-                itemInfoDisplayTextMesh.text += "CAN BE READ\n";
+                itemInfoDisplayTextMesh.text += "可被閱讀\n";
             }
             else if (itemComponents[i].GetType() == typeof(Action_CallScoutmaster))
             {
-                itemInfoDisplayTextMesh.text += effectColors["Injury"] + "BREAKS RULE 0 WHEN USED</color>\n";
+                itemInfoDisplayTextMesh.text += effectColors["Injury"] + "使用後會打破規則0</color>\n";
             }
             else if (itemComponents[i].GetType() == typeof(Action_MoraleBoost))
             {
                 Action_MoraleBoost effect = (Action_MoraleBoost)itemComponents[i];
                 if (effect.boostRadius < 0)
                 {
-                    itemInfoDisplayTextMesh.text += effectColors["ItemInfoDisplayPositive"] + "GAIN</color> " + effectColors["Extra Stamina"] + (effect.baselineStaminaBoost * 100f).ToString("F1").Replace(".0", "") + " EXTRA STAMINA</color>\n";
+                    itemInfoDisplayTextMesh.text += effectColors["ItemInfoDisplayPositive"] + "獲得</color> " + effectColors["Extra Stamina"] + (effect.baselineStaminaBoost * 100f).ToString("F1").Replace(".0", "") + " 點額外士氣</color>\n";
                 }
                 else if (effect.boostRadius > 0)
                 {
-                    itemInfoDisplayTextMesh.text += "<#CCCCCC>NEARBY PLAYERS</color>" + effectColors["ItemInfoDisplayPositive"] + " GAIN</color> " + effectColors["Extra Stamina"] + (effect.baselineStaminaBoost * 100f).ToString("F1").Replace(".0", "") + " EXTRA STAMINA</color>\n";
+                    itemInfoDisplayTextMesh.text += "<#CCCCCC>最近的玩家</color>" + effectColors["ItemInfoDisplayPositive"] + " 獲得</color> " + effectColors["Extra Stamina"] + (effect.baselineStaminaBoost * 100f).ToString("F1").Replace(".0", "") + " 點額外士氣</color>\n";
                 }
             }
             else if (itemComponents[i].GetType() == typeof(Breakable))
             {
-                itemInfoDisplayTextMesh.text += effectColors["Hunger"] + "THROW</color> TO CRACK OPEN\n";
+                itemInfoDisplayTextMesh.text += effectColors["Hunger"] + "丟出</color>後會裂開\n";
             }
             else if (itemComponents[i].GetType() == typeof(Bonkable))
             {
-                itemInfoDisplayTextMesh.text += effectColors["Hunger"] + "THROW</color> AT HEAD TO " + effectColors["Injury"] + "BONK</color>\n";
+                itemInfoDisplayTextMesh.text += "被丟到頭的玩家會" + effectColors["Injury"] + "暈倒</color>\n";
             }
             else if (itemComponents[i].GetType() == typeof(MagicBean))
             {
                 MagicBean effect = (MagicBean)itemComponents[i];
-                itemInfoDisplayTextMesh.text += effectColors["Hunger"] + "THROW</color> TO PLANT A VINE THAT GROWS\nPERPENDICULAR TO TERRAIN UP TO\n"
-                    + (effect.plantPrefab.maxLength / 2f).ToString("F1").Replace(".0", "") + "m OR UNTIL IT HITS SOMETHING\n";
+                itemInfoDisplayTextMesh.text += effectColors["Hunger"] + "丟出</color>後會種下垂直向上生長的藤蔓，\n最長可達"
+                    + (effect.plantPrefab.maxLength / 2f).ToString("F1").Replace(".0", "") + "公尺或直到碰到東西為止\n";
             }
             else if (itemComponents[i].GetType() == typeof(BingBong))
             {
-                itemInfoDisplayTextMesh.text += "MASCOT OF BINGBONG AIRWAYS\n";
+                itemInfoDisplayTextMesh.text += "兵幫航空的吉祥物\n";
             }
             else if (itemComponents[i].GetType() == typeof(Action_Passport))
             {
-                itemInfoDisplayTextMesh.text += "OPEN TO CUSTOMIZE CHARACTER\n";
+                itemInfoDisplayTextMesh.text += "打開護照來自訂角色\n";
             }
             else if (itemComponents[i].GetType() == typeof(Actions_Binoculars))
             {
-                itemInfoDisplayTextMesh.text += "USE TO LOOK FURTHER\n";
+                itemInfoDisplayTextMesh.text += "用來看得更遠\n";
             }
             else if (itemComponents[i].GetType() == typeof(Action_WarpToRandomPlayer))
             {
-                itemInfoDisplayTextMesh.text += "WARP TO RANDOM PLAYER\n";
+                itemInfoDisplayTextMesh.text += "傳送到隨機玩家身邊\n";
             }
             else if (itemComponents[i].GetType() == typeof(Action_WarpToBiome))
             {
                 Action_WarpToBiome effect = (Action_WarpToBiome)itemComponents[i];
-                itemInfoDisplayTextMesh.text += "WARP TO " + effect.segmentToWarpTo.ToString().ToUpper() + "\n";
+                itemInfoDisplayTextMesh.text += "傳送到" + effect.segmentToWarpTo.ToString().ToUpper() + "\n";
             }
             else if (itemComponents[i].GetType() == typeof(Parasol))
             {
-                itemInfoDisplayTextMesh.text += "OPEN TO SLOW YOUR DESCENT\n";
+                itemInfoDisplayTextMesh.text += "打開遮陽傘來減緩下降速度\n";
             }
             else if (itemComponents[i].GetType() == typeof(Frisbee))
             {
-                itemInfoDisplayTextMesh.text += effectColors["Hunger"] + "THROW</color> IT\n";
+                itemInfoDisplayTextMesh.text += "把它" + effectColors["Hunger"] + "丟出去</color>\n";
             }
             else if (itemComponents[i].GetType() == typeof(Action_ConstructableScoutCannonScroll))
             {
-                itemInfoDisplayTextMesh.text += "\n<#CCCCCC>WHEN PLACED, LIGHT FUSE TO:</color>\nLAUNCH SCOUTS IN BARREL\n";
+                itemInfoDisplayTextMesh.text += "\n<#CCCCCC>放下後透過點燃導火線</color>\n來把大砲中的偵察兵發射出去\n";
                     //+ "\n<#CCCCCC>LIMITS GRAVITATIONAL ACCELERATION\n(PREVENTS OR LOWERS FALL DAMAGE)</color>\n";
             }
             else if (itemComponents[i].GetType() == typeof(Dynamite))
             {
                 Dynamite effect = (Dynamite)itemComponents[i];
-                itemInfoDisplayTextMesh.text += effectColors["Injury"] + "EXPLODES</color> FOR UP TO " + effectColors["Injury"] 
-                    + (effect.explosionPrefab.GetComponent<AOE>().statusAmount * 100f).ToString("F1").Replace(".0", "") + " INJURY</color>\n<#CCCCCC>ADDITIONAL DAMAGE TAKEN IF HELD</color>\n";
+                itemInfoDisplayTextMesh.text += effectColors["Injury"] + "爆炸</color>造成最多" + effectColors["Injury"] 
+                    + (effect.explosionPrefab.GetComponent<AOE>().statusAmount * 100f).ToString("F1").Replace(".0", "") + " 傷害</color>\n<#CCCCCC>拿着引爆會受到額外傷害</color>\n";
             }
             else if (itemComponents[i].GetType() == typeof(Scorpion))
             {
@@ -543,9 +546,11 @@ public partial class Plugin : BaseUnityPlugin
                 if (configForceUpdateTime.Value <= 1f)
                 {
                     float effectPoison = Mathf.Max(0.5f, (1f - item.holderCharacter.refs.afflictions.statusSum + 0.05f)) * 100f; // v.1.23.a BASED ON Scorpion.InflictAttack
-                    itemInfoDisplayTextMesh.text += "IF ALIVE, " + effectColors["Poison"] + "STINGS</color> YOU\n" + effectColors["Curse"] + "DIES</color> WHEN " + effectColors["Heat"] + "COOKED</color>\n\n" 
-                        + "<#CCCCCC>NEXT STING WILL DEAL:</color>\n" + effectColors["Poison"] + effectPoison.ToString("F1").Replace(".0", "") + " POISON</color> OVER " 
-                        + effect.totalPoisonTime.ToString("F1").Replace(".0", "") + "s\n<#CCCCCC>(MORE DAMAGE IF HEALTHY)</color>\n";
+                    itemInfoDisplayTextMesh.text += "如果蠍子活着的話會" + effectColors["Poison"] + "螫</color>你\n在" + effectColors["Heat"] + "烤熟</color>後會" + effectColors["Heat"] + "死掉</color>\n\n" 
+                        + "<#CCCCCC>每被螫一次會持續</color>" + effectColors["Poison"] + effect.totalPoisonTime.ToString("F1").Replace(".0", "") + "秒</color>獲得"
+                        + effectPoison.ToString("F1").Replace(".0", "") + " 點毒素</color>\n"
+                        + "<#CCCCCC>(若目前十分健康會造成更多傷害)</color>\n" ;
+
                 }
                 else
                 {
@@ -563,14 +568,13 @@ public partial class Plugin : BaseUnityPlugin
                 {
                     AOE effectAOE = effect.objectToSpawn.transform.Find("AOE").GetComponent<AOE>();
                     RemoveAfterSeconds effectTime = effect.objectToSpawn.transform.Find("AOE").GetComponent<RemoveAfterSeconds>();
-                    itemInfoDisplayTextMesh.text += "<#CCCCCC>SPRAY A " + effectTime.seconds.ToString("F1").Replace(".0", "") + "s MIST THAT APPLIES:</color>\n"
+                    itemInfoDisplayTextMesh.text += "<#CCCCCC>噴灑一個持續" + effectTime.seconds.ToString("F1").Replace(".0", "") + "秒</color>的霧氣，會造成以下效果：\n"
                         + ProcessAffliction(effectAOE.affliction);                }
             }
             else if (itemComponents[i].GetType() == typeof(CactusBall))
             {
                 CactusBall effect = (CactusBall)itemComponents[i];
-                itemInfoDisplayTextMesh.text += effectColors["Thorns"] + "STICKS</color> TO YOUR BODY\n\nCAN " + effectColors["Hunger"] 
-                    + "THROW</color> BY USING\nAT LEAST " + (effect.throwChargeRequirement * 100f).ToString("F1").Replace(".0", "") + "% POWER\n";
+                itemInfoDisplayTextMesh.text += "需要至少用" + (effect.throwChargeRequirement * 100f).ToString("F1").Replace(".0", "") + "% 的力" + effectColors["Hunger"] + "丟出去</color>\n不然就會" + effectColors["Thorns"] + "黏</color>在你身上\n";
             }
             else if (itemComponents[i].GetType() == typeof(BingBongShieldWhileHolding))
             {
