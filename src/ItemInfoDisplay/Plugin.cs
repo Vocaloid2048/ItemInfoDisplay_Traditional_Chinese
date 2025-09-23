@@ -111,7 +111,279 @@ public partial class Plugin : BaseUnityPlugin{
                     }
                     break;
                 }
-                // NOT DONE YET, START FROM Action_ApplyAffliction
+                case Action_ApplyAffliction effect: {
+                    suffixAfflictions += ProcessAffliction(effect.affliction); break;
+                }
+                case Action_ClearAllStatus effect: {
+                    itemInfoDisplayTextMesh.text += EffectColors.ITEM_INFO_DISPLAY_POSITIVE + "清理所有狀態</color>";
+                    itemInfoDisplayTextMesh.text += (effect.excludeCurse ? "（除了" + EffectColors.CURSE + "詛咒</color>）\n" : "\n");
+                    
+                    if (effect.otherExclusions.Count > 0) {
+                        foreach (CharacterAfflictions.STATUSTYPE exclusion in effect.otherExclusions) {
+                            EffectColors eff = GetEffectColorsByStr(exclusion.ToString());
+                            itemInfoDisplayTextMesh.text += ", " + eff + EffectColorLocalName(eff) + "</color>";
+                        }
+                    }
+                    itemInfoDisplayTextMesh.text = itemInfoDisplayTextMesh.text.Replace(", <#E13542>CRAB</color>", "") + "\n";
+                    break;
+                }
+                case Action_ConsumeAndSpawn effect: {
+                    if (effect.itemToSpawn.ToString().Contains("Peel")) {
+                        itemInfoDisplayTextMesh.text += "<#CCCCCC>食用後獲得果皮</color>\n";
+                    }
+                    break;
+                }
+                case Action_ReduceUses effect: {
+                    OptionableIntItemData uses = (OptionableIntItemData)item.data.data[DataEntryKey.ItemUses];
+                    if (uses.HasData && uses.Value > 1) { suffixUses += "   " + uses.Value + " USES"; }
+                    break;
+                }
+                case Lantern lantern: {
+                    if (itemGameObj.name.Equals("Torch(Clone)")){
+                        itemInfoDisplayTextMesh.text += "可被點亮\n";
+                    } else {
+                        suffixAfflictions += "<#CCCCCC>點亮時，附近的玩家會獲得：</color>\n";
+                    }
+
+                    if (itemGameObj.name.Equals("Lantern_Faerie(Clone)")){
+                        StatusField effect = itemGameObj.transform.Find("FaerieLantern/Light/Heat").GetComponent<StatusField>();
+                        EffectColors eff = GetEffectColorsByStr(effect.statusType.ToString());
+                        suffixAfflictions += ProcessEffectOverTime(effect.statusAmountPerSecond, 1f, lantern.startingFuel, eff);
+                        foreach (StatusField.StatusFieldStatus status in effect.additionalStatuses){
+                            if (suffixAfflictions.EndsWith('\n')){
+                                suffixAfflictions = suffixAfflictions.Remove(suffixAfflictions.Length - 1);
+                            }
+                            suffixAfflictions += ",\n" + ProcessEffectOverTime(status.statusAmountPerSecond, 1f, lantern.startingFuel, eff);
+                        }
+                    } else if (itemGameObj.name.Equals("Lantern(Clone)")){
+                        StatusField effect = itemGameObj.transform.Find("GasLantern/Light/Heat").GetComponent<StatusField>();
+                        EffectColors eff = GetEffectColorsByStr(effect.statusType.ToString());
+                        suffixAfflictions += ProcessEffectOverTime(effect.statusAmountPerSecond, 1f, lantern.startingFuel, eff);
+                    }
+                    break;
+                }
+                case Action_RaycastDart effect: {
+                    isConsumable = true;
+                    suffixAfflictions += "<#CCCCCC>發射一支飛鏢，造成以下效果：</color>\n";
+                    for (int j = 0; j < effect.afflictionsOnHit.Length; j++){
+                        suffixAfflictions += ProcessAffliction(effect.afflictionsOnHit[j]);
+                        if (suffixAfflictions.EndsWith('\n')){
+                            suffixAfflictions = suffixAfflictions.Remove(suffixAfflictions.Length - 1);
+                        }
+                        suffixAfflictions += ",\n";
+                    }
+                    if (suffixAfflictions.EndsWith('\n')){
+                        suffixAfflictions = suffixAfflictions.Remove(suffixAfflictions.Length - 2);
+                    }
+                    suffixAfflictions += "\n";
+                    break;
+                }
+                case MagicBugle effect: {
+                    itemInfoDisplayTextMesh.text += "當吹響友誼號角時，\n"; break;
+                }
+                case ClimbingSpikeComponent effect: {
+                    itemInfoDisplayTextMesh.text += "放置一個你可以抓住的岩釘\n來 " + EffectColors.EXTRA_STAMINA + "恢復體力</color>\n"; break;
+                }
+                case Action_Flare effect: {
+                    itemInfoDisplayTextMesh.text += "可被點亮\n";break;
+                }
+                case Backpack effect: {
+                    itemInfoDisplayTextMesh.text += "放下背包才可放入物品\n"; break;
+                }
+                case BananaPeel effect: {
+                    itemInfoDisplayTextMesh.text += "踩到後會" + EffectColors.HUNGER + "滑倒</color>\n"; break;
+                }
+                case ScoutEffigy effect: {
+                    itemInfoDisplayTextMesh.text += EffectColors.EXTRA_STAMINA + "復活</color>一名死亡的玩家\n"; break;
+                }
+                case Constructable effect: {
+                    if (effect.constructedPrefab.name.Equals("PortableStovetop_Placed")){
+                        itemInfoDisplayTextMesh.text += "放置" + EffectColors.INJURY + "攜帶式爐具</color>以提供" + PrettyCount(effect.constructedPrefab.GetComponent<Campfire>().burnsFor, 1) + "秒的溫暖\n";
+                    }
+                    else{
+                        itemInfoDisplayTextMesh.text += "可被放置\n";
+                    }
+                    break;
+                }
+                case RopeSpool effect: {
+                    itemInfoDisplayTextMesh.text += (effect.isAntiRope ? "放置一條向上漂浮的繩索\n" : "放置一條繩索\n");
+                    
+                    itemInfoDisplayTextMesh.text += "綁繩結最短需" + PrettyCount(effect.minSegments / 4f, 2) + "公尺長，最多" + PrettyCount(Rope.MaxSegments / 4f, 1) + "公尺長\n";
+                    
+                    //using force update here for remaining length since Rope has no character distinction for Detach_Rpc() hook, maybe unless OK with any player triggering this
+                    if (configForceUpdateTime.Value <= 1f){
+                        suffixUses += "   剩餘" + PrettyCount(effect.RopeFuel / 4f, 2) + "公尺";
+                    }
+                    break;
+                }
+                case RopeShooter effect: {
+                    // 發射一條繩索錨，並放置一條繩子 …
+                    itemInfoDisplayTextMesh.text += "發射一條";
+                    itemInfoDisplayTextMesh.text += PrettyCount(effect.maxLength / 4f, 1) + "公尺長" + (effect.ropeAnchorWithRopePref.name.Equals("RopeAnchorForRopeShooterAnti") ? "向上漂浮</color>" : "") + "的繩子\n";
+                    break;
+                }
+                case Antigrav effect: {
+                    if(effect.intensity == 0f) break;
+                    suffixAfflictions += EffectColors.INJURY + "警告：</color><#CCCCCC>放下後會飛走</color>\n";
+                    break;
+                }
+                case Action_Balloon effect: {
+                    suffixAfflictions += "可以綁在玩家身上\n";
+                    break;
+                }
+                case VineShooter effect: {
+                    itemInfoDisplayTextMesh.text += "從當前位置發射一條鏈條到你瞄準的地方\n最長可達"
+                        + PrettyCount(effect.maxLength / (5f / 3f), 1) + "公尺\n";
+                    break;
+                }
+                // 以下為 case.txt 內容的 switch-case 改寫
+                case ShelfShroom effect: {
+                    if (effect.instantiateOnBreak.name.Equals("HealingPuffShroomSpawn")) {
+                        GameObject effect1 = effect.instantiateOnBreak.transform.Find("VFX_SporeHealingExplo").gameObject;
+                        AOE effect1AOE = effect1.GetComponent<AOE>();
+                        GameObject effect2 = effect1.transform.Find("VFX_SporePoisonExplo").gameObject;
+                        AOE effect2AOE = effect2.GetComponent<AOE>();
+                        AOE[] effect2AOEs = effect2.GetComponents<AOE>();
+                        TimeEvent effect2TimeEvent = effect2.GetComponent<TimeEvent>();
+                        RemoveAfterSeconds effect2RemoveAfterSeconds = effect2.GetComponent<RemoveAfterSeconds>();
+                        itemInfoDisplayTextMesh.text += EffectColors.HUNGER + "丟出</color>後會釋放出氣體，效果為：\n";
+                        itemInfoDisplayTextMesh.text += ProcessEffect(Mathf.Round(effect1AOE.statusAmount * 0.9f * 40f) / 40f, GetEffectColorsByStr(effect1AOE.statusType.ToString()));
+                        itemInfoDisplayTextMesh.text += ProcessEffectOverTime(Mathf.Round(effect2AOE.statusAmount * (1f / effect2TimeEvent.rate) * 40f) / 40f, 1f, effect2RemoveAfterSeconds.seconds, GetEffectColorsByStr(effect2AOE.statusType.ToString()));
+                        if (effect2AOEs.Length > 1) {
+                            itemInfoDisplayTextMesh.text += ProcessEffectOverTime(Mathf.Round(effect2AOEs[1].statusAmount * (1f / effect2TimeEvent.rate) * 40f) / 40f, 1f, (effect2RemoveAfterSeconds.seconds + 1f), GetEffectColorsByStr(effect2AOEs[1].statusType.ToString()));
+                        }
+                    } else if (effect.instantiateOnBreak.name.Equals("ShelfShroomSpawn")) {
+                        itemInfoDisplayTextMesh.text += EffectColors.HUNGER + "丟出</color>後會生成一個平台\n";
+                    } else if (effect.instantiateOnBreak.name.Equals("BounceShroomSpawn")) {
+                        itemInfoDisplayTextMesh.text += EffectColors.HUNGER + "丟出</color>後會生成一個彈跳墊\n";
+                    }
+                    break;
+                }
+                case Action_Die effect: {
+                    itemInfoDisplayTextMesh.text += "用了就" + EffectColors.CURSE + "死翹翹</color>了\n"; break;
+                }
+                case Action_SpawnGuidebookPage effect: {
+                    isConsumable = true;
+                    itemInfoDisplayTextMesh.text += "可被開啟\n"; break;
+                }
+                case Action_Guidebook effect: {
+                    itemInfoDisplayTextMesh.text += "可被閱讀\n"; break;
+                }
+                case Action_CallScoutmaster effect: {
+                    itemInfoDisplayTextMesh.text += EffectColors.INJURY + "使用後會打破規則0</color>\n"; break;
+                }
+                case Action_MoraleBoost effect: {
+                    if (effect.boostRadius < 0) {
+                        itemInfoDisplayTextMesh.text += EffectColors.ITEM_INFO_DISPLAY_POSITIVE + "獲得</color> " + EffectColors.EXTRA_STAMINA + PrettyCount(effect.baselineStaminaBoost * 100f, 1) + " 點額外士氣</color>\n";
+                    } else if (effect.boostRadius > 0) {
+                        itemInfoDisplayTextMesh.text += "<#CCCCCC>最近的玩家</color>" + EffectColors.ITEM_INFO_DISPLAY_POSITIVE + " 獲得</color> " + EffectColors.EXTRA_STAMINA + PrettyCount(effect.baselineStaminaBoost * 100f, 1) + " 點額外士氣</color>\n";
+                    }
+                    break;
+                }
+                case Breakable effect: {
+                    itemInfoDisplayTextMesh.text += EffectColors.HUNGER + "丟出</color>後會裂開\n"; break;
+                }
+                case Bonkable effect: {
+                    itemInfoDisplayTextMesh.text += "被丟到頭的玩家會" + EffectColors.INJURY + "暈倒</color>\n"; break;
+                }
+                case MagicBean effect: {
+                    itemInfoDisplayTextMesh.text += EffectColors.HUNGER + "丟出</color>後會種下垂直向上生長的藤蔓，\n最長可達"
+                        + PrettyCount(effect.plantPrefab.maxLength / 2f, 1) + "公尺或直到碰到東西為止\n"; 
+                    break;
+                }
+                case BingBong effect: {
+                    itemInfoDisplayTextMesh.text += "兵幫航空的吉祥物\n"; break;
+                }
+                case Action_Passport effect: {
+                    itemInfoDisplayTextMesh.text += "打開護照來自訂角色\n"; break;
+                }
+                case Actions_Binoculars effect: {
+                    itemInfoDisplayTextMesh.text += "用來看得更遠\n"; break;
+                }
+                case Action_WarpToRandomPlayer effect: {
+                    itemInfoDisplayTextMesh.text += "傳送到隨機玩家身邊\n"; break;
+                }
+                case Action_WarpToBiome effect: {
+                    itemInfoDisplayTextMesh.text += "傳送到" + effect.segmentToWarpTo.ToString().ToUpper() + "\n"; break;
+                }
+                case Parasol effect: {
+                    itemInfoDisplayTextMesh.text += "打開遮陽傘來減緩下降速度\n"; break;
+                }
+                case Frisbee effect: {
+                    itemInfoDisplayTextMesh.text += "把它" + EffectColors.HUNGER + "丟出去</color>\n"; break;
+                }
+                case Action_ConstructableScoutCannonScroll effect: {
+                    itemInfoDisplayTextMesh.text += "\n<#CCCCCC>放下後透過點燃導火線</color>\n來把大砲中的偵察兵發射出去\n"; break;
+                }
+                case Dynamite effect: {
+                    itemInfoDisplayTextMesh.text += EffectColors.INJURY + "爆炸</color>造成最多" + EffectColors.INJURY
+                        + PrettyCount(effect.explosionPrefab.GetComponent<AOE>().statusAmount * 100f, 1) + " 傷害</color>\n<#CCCCCC>拿着引爆會受到額外傷害</color>\n"; 
+                    break;
+                }
+                case Scorpion effect: {
+                    if (configForceUpdateTime.Value <= 1f) {
+                        float effectPoison = Mathf.Max(0.5f, (1f - item.holderCharacter.refs.afflictions.statusSum + 0.05f)) * 100f;
+                        itemInfoDisplayTextMesh.text += "如果蠍子活着的話會" + EffectColors.POISON + "螫</color>你\n在" + EffectColors.HEAT + "烤熟</color>後會" + EffectColors.HEAT + "死掉</color>\n\n"
+                            + "<#CCCCCC>每被螫一次會持續</color>" + EffectColors.POISON + PrettyCount(effect.totalPoisonTime, 1) + "秒</color>獲得"
+                            + PrettyCount(effectPoison, 1) + " 點毒素</color>\n"
+                            + "<#CCCCCC>(若目前十分健康會造成更多傷害)</color>\n";
+                    } else {
+                        itemInfoDisplayTextMesh.text += "IF ALIVE, " + EffectColors.POISON + "STINGS</color> YOU\n" + EffectColors.CURSE
+                            + "DIES</color> WHEN " + EffectColors.HEAT + "COOKED</color>\n\n" + "<#CCCCCC>NEXT STING WILL DEAL:</color>\nAT LEAST "
+                            + EffectColors.POISON + "50 POISON</color> OVER " + PrettyCount(effect.totalPoisonTime, 1) + "s\nAT MOST "
+                            + EffectColors.POISON + "105 POISON</color> OVER " + PrettyCount(effect.totalPoisonTime, 1)
+                            + "s\n<#CCCCCC>(MORE DAMAGE IF HEALTHY)</color>\n";
+                    }
+                    break;
+                }
+                case Action_Spawn effect: {
+                    if (effect.objectToSpawn.name.Equals("VFX_Sunscreen")) {
+                        AOE effectAOE = effect.objectToSpawn.transform.Find("AOE").GetComponent<AOE>();
+                        RemoveAfterSeconds effectTime = effect.objectToSpawn.transform.Find("AOE").GetComponent<RemoveAfterSeconds>();
+                        itemInfoDisplayTextMesh.text += "<#CCCCCC>噴灑一個持續" + PrettyCount(effectTime.seconds, 1) + "秒</color>的霧氣，會造成以下效果：\n"
+                            + ProcessAffliction(effectAOE.affliction);
+                    }
+                    break;
+                }
+                case CactusBall effect: {
+                    itemInfoDisplayTextMesh.text += "需要至少用" + PrettyCount(effect.throwChargeRequirement * 100f, 1) + "% 的力" + EffectColors.HUNGER + "丟出去</color>\n不然就會" + EffectColors.THORNS + "黏</color>在你身上\n";
+                    break;
+                }
+                case BingBongShieldWhileHolding effect: {
+                    itemInfoDisplayTextMesh.text += "<#CCCCCC>裝備時將會獲得：</color>\n" + EffectColors.SHIELD + "護盾</color>（無敵狀態）\n"; break;
+                }
+                case ItemCooking itemCooking: {
+                    // 優先處理 wreckWhenCooked 狀態
+                    if (itemCooking.wreckWhenCooked) {
+                        suffixCooked += "\n" + EffectColors.CURSE + (itemCooking.timesCookedLocal >= 1 ? "因為被烤而壞掉</color>" : "拿去烤的話會壞掉</color>");
+                        break;
+                    }
+
+                    // 依照 timesCookedLocal 狀態處理
+                    switch (itemCooking.timesCookedLocal) {
+                        case 0:
+                            suffixCooked += "\n" + EffectColors.EXTRA_STAMINA + "可被烤</color>";
+                            break;
+                        case 1:
+                            suffixCooked += "   " + EffectColors.EXTRA_STAMINA + "1個烤過的</color>\n" + EffectColors.HUNGER + "可被烤</color>";
+                            break;
+                        case 2:
+                            suffixCooked += "   " + EffectColors.HUNGER + "2個烤過的</color>\n" + EffectColors.INJURY + "可被烤</color>";
+                            break;
+                        case 3:
+                            suffixCooked += "   " + EffectColors.INJURY + "3個烤過的</color>\n" + EffectColors.POISON + "可被烤</color>";
+                            break;
+                        default: {
+                            if (itemCooking.timesCookedLocal >= ItemCooking.COOKING_MAX) {
+                                suffixCooked += "   " + EffectColors.CURSE + itemCooking.timesCookedLocal.ToString() + "個烤過的\n不可被烤</color>";
+                            } else if (itemCooking.timesCookedLocal >= 4) {
+                                suffixCooked += "   " + EffectColors.POISON + itemCooking.timesCookedLocal.ToString() + "個烤過的\n可被烤</color>";
+                            }
+                            break;
+                        }
+                    }
+                    break;
+                }
             }
         }
 
@@ -219,7 +491,8 @@ public partial class Plugin : BaseUnityPlugin{
         if (amount == 0) return result;
 
         result += (effect == EffectColors.EXTRA_STAMINA ? EffectColors.ITEM_INFO_DISPLAY_POSITIVE : EffectColors.ITEM_INFO_DISPLAY_NEGATIVE);
-        result += (amount > 0 ? "獲得</color> " : "移除</color> ") + effect + PrettyCount(Mathf.Abs(amount) * 100f, 1) + " 點" + EffectColorLocalName(effect);
+        result += (amount > 0 ? "獲得</color> " : "移除</color> ");
+        result += effect + PrettyCount(Mathf.Abs(amount) * 100f, 1) + " 點" + EffectColorLocalName(effect);
 
         return result;
     }
@@ -235,7 +508,8 @@ public partial class Plugin : BaseUnityPlugin{
 
         result += time.ToString() +"秒内合共";
         result += (effect == EffectColors.EXTRA_STAMINA ? EffectColors.ITEM_INFO_DISPLAY_POSITIVE : EffectColors.ITEM_INFO_DISPLAY_NEGATIVE);
-        result += (amountPerSecond > 0 ? "獲得</color> " : "移除</color> ") + effect + PrettyCount(Mathf.Abs(amountPerSecond) * time * (1 / rate) * 100f, 1) + " 點" + EffectColorLocalName(effect);
+        result += (amountPerSecond > 0 ? "獲得</color> " : "移除</color> ");
+        result += effect + PrettyCount(Mathf.Abs(amountPerSecond) * time * (1 / rate) * 100f, 1) + " 點" + EffectColorLocalName(effect);
 
         return result;
     }
@@ -292,7 +566,59 @@ public partial class Plugin : BaseUnityPlugin{
                 }
                 break;
             }
-            // NOT DONE YET, START FROM AdjustStatus
+            /**
+             * 展示：獲得/移除 $1% 點$2
+             */
+            case Affliction.AfflictionType.AdjustStatus: {
+                Affliction_AdjustStatus effect = (Affliction_AdjustStatus)affliction;
+                EffectColors eff = GetEffectColorsByStr(effect.statusType.ToString());
+                result += (eff == EffectColors.EXTRA_STAMINA ? EffectColors.ITEM_INFO_DISPLAY_POSITIVE : EffectColors.ITEM_INFO_DISPLAY_NEGATIVE);
+                result += (effect.statusAmount > 0 ? "獲得</color> " : "移除</color> ");
+                result += eff + PrettyCount(Mathf.Abs(effect.statusAmount) * 100f, 1) + " 點" + EffectColorLocalName(eff) + "</color>\n";
+                break;
+            }
+            /**
+             *  展示：$1 秒內合共獲得/移除 $2 點昏睡效果
+             */
+            case Affliction.AfflictionType.DrowsyOverTime: {
+                Affliction_AdjustDrowsyOverTime effect = (Affliction_AdjustDrowsyOverTime) affliction; // 1.6.a
+                result += PrettyCount(effect.totalTime,1) + " 秒内合共 ";
+                result += (effect.statusPerSecond > 0 ? EffectColors.ITEM_INFO_DISPLAY_POSITIVE + "獲得</color> " : EffectColors.ITEM_INFO_DISPLAY_NEGATIVE + "移除</color> ");
+                result += EffectColors.DROWSY + PrettyCount(Mathf.Round((Mathf.Abs(effect.statusPerSecond) * effect.totalTime * 100f) * 0.4f) / 0.4f, 1) + " 點昏睡效果</color> ";
+                break;
+            }
+            /**
+             *  展示：$1 秒內合共獲得/移除 $2 點寒冷效果
+             */
+            case Affliction.AfflictionType.ColdOverTime: {
+                Affliction_AdjustColdOverTime effect = (Affliction_AdjustColdOverTime) affliction;
+                result += PrettyCount(effect.totalTime, 1) + " 秒内合共 ";
+                result += (effect.statusPerSecond > 0 ? EffectColors.ITEM_INFO_DISPLAY_POSITIVE + "獲得</color> " : EffectColors.ITEM_INFO_DISPLAY_NEGATIVE + "移除</color> ");
+                result += EffectColors.COLD + PrettyCount(Mathf.Round((Mathf.Abs(effect.statusPerSecond) * effect.totalTime * 100f) * 0.4f) / 0.4f, 1) + " 點寒冷效果</color> ";
+                break;
+            }
+            /**
+             *  展示：清除所有狀態，然後隨機獲得飢餓，額外體力，受傷，中毒，寒冷，炎熱，昏睡
+             */
+            case Affliction.AfflictionType.Chaos: {
+                result += EffectColors.ITEM_INFO_DISPLAY_POSITIVE + "清除所有狀態</color>，然後隨機獲得\n"
+                    + EffectColors.HUNGER + "飢餓</color>，" + EffectColors.EXTRA_STAMINA + "額外體力</color>，" 
+                    + EffectColors.INJURY + "受傷</color>，" + EffectColors.POISON + "中毒</color>，"
+                    + EffectColors.COLD + "寒冷</color>，" + EffectColors.HEAT + "炎熱</color>，"
+                    + EffectColors.DROWSY + "昏睡</color>\n";
+                break;
+
+            }
+            /**
+             *  展示：慎防中暑！在台地的太陽下逗留超過 $1 秒後會開始獲得炎熱效果
+             */
+            case Affliction.AfflictionType.Sunscreen: {
+                Affliction_Sunscreen effect = (Affliction_Sunscreen) affliction;
+                result += "慎防中暑！在台地的太陽下逗留超過 " + PrettyCount(effect.totalTime,1) + " 秒後會開始獲得" + EffectColors.HEAT + "炎熱效果</color>\n";
+                break;
+            }
+
+
             default: break;
         }
 
@@ -300,7 +626,7 @@ public partial class Plugin : BaseUnityPlugin{
     }
 
     private static EffectColors GetEffectColorsByStr(string effect) {
-        return (EffectColors)Enum.Parse(typeof(EffectColors), effect);
+        return (EffectColors)Enum.Parse(typeof(EffectColors), effect.ToUpper());
     }
 
     private static void AddDisplayObject(){
