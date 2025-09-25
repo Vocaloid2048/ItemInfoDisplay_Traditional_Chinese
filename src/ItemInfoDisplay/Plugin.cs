@@ -53,19 +53,6 @@ public partial class Plugin : BaseUnityPlugin{
     private static ConfigEntry<float> configSizeDeltaX;
     private static ConfigEntry<float> configForceUpdateTime;
 
-    /**
-     * 目前有以下物品未處理：
-     * 背包 BACKPACK
-     * 喊話器 MEGAPHONE
-     * 蘆薈 ALOE VERA
-     * 萬靈藥 CURE-ALL
-     * 冬莓 WINTERBERRY
-     * 刺莓 PRICKLEBERRY
-     * 傳送羅盤 WARP COMPASS
-     * 辣椒 SCORCHBERRY
-     * 防曬乳 SUNSCREEN
-     */
-
     private void Awake(){
         Log = Logger;
         lastKnownSinceItemAttach = 0f;
@@ -83,6 +70,9 @@ public partial class Plugin : BaseUnityPlugin{
         Log.LogInfo($"Plugin {Name} is loaded! (Modified Version by Vocaloid2048)");
     }
 
+    /**
+     * 目前有以下物品未處理：
+     */
     private static void ProcessItemGameObject(){
         Item item = Character.observedCharacter.data.currentItem; // not sure why this broke after THE MESA update, made no changes (just rebuilt)
         GameObject itemGameObj = item.gameObject;
@@ -101,13 +91,32 @@ public partial class Plugin : BaseUnityPlugin{
 
         switch (itemGameObj.name) {
             case "Bugle(Clone)": 
-                itemInfoDisplayTextMesh.text += "圍着隊友吹響它吧！\n"; break;
+                itemInfoDisplayTextMesh.text += "圍着隊友吹響它吧！\n" + EffectColorLocalName(EffectColors.HEAT) + "然後就會有人過來打扁你（誤</color>"; break;
             case "Pirate Compass(Clone)": 
                 itemInfoDisplayTextMesh.text += EffectColors.INJURY.HexTag() + "指向</color>"+"最近的行李箱\n"; break;
             case "Compass(Clone)":
                 itemInfoDisplayTextMesh.text += EffectColors.INJURY.HexTag() + "指向</color>"+"山頂\n"; break;
             case "Shell Big(Clone)":
                 itemInfoDisplayTextMesh.text += "試試把它" + EffectColors.HUNGER.HexTag() + "丟向</color>"+"椰子\n"; break;
+            case "Backpack(Clone)":
+                itemInfoDisplayTextMesh.text += "放下背包才可放入物品\n"; break;
+            case "Megaphone(Clone)":
+                itemInfoDisplayTextMesh.text += "感覺聲音太小了嗎？可以試試用它來喊話哦~\n"+ EffectColors.HEAT.HexTag() + "我可沒有叫你對着隊友叫賣</color>\n"; break;
+            case "AloeVera(Clone)":
+                itemInfoDisplayTextMesh.text += "食用後可以減少 "+EffectColors.HEAT.HexTag()+ "50"+" 點"+EffectColorLocalName(EffectColors.HEAT) + "</color>\n"; break;
+            case "Cure-All(Clone)":
+                itemInfoDisplayTextMesh.text += "飲用後可以幫助消除多種負面狀態</color>\n"; break;
+        }
+
+        switch (itemGameObj.name.ToUpper()) {
+            case string name when name.Contains("WINTERBERRY"):
+                itemInfoDisplayTextMesh.text += "放心，這個能吃的（應該吧\n"; break;
+            case string name when name.Contains("PRICKLEBERRY"):
+                itemInfoDisplayTextMesh.text += "小心有刺！你必須靠其他玩家幫忙才能拔走身上的刺！\n"; break;
+            case string name when name.Contains("SCORCHBERRY"):
+                itemInfoDisplayTextMesh.text += EffectColorLocalName(EffectColors.HEAT) + "好辣！</color>\n"; break;
+            case string name when name.Contains("SUNSCREEN"):
+                itemInfoDisplayTextMesh.text += "為玩家提供 90 秒的防曬効果，留意最多只能用三次哦！\n"; break;
         }
 
         for (int i = 0; i < itemComponents.Length; i++) {
@@ -127,7 +136,7 @@ public partial class Plugin : BaseUnityPlugin{
                     prefixStatus += ProcessEffect(effect.amount, EffectColors.EXTRA_STAMINA) + "\n"; break;
                 }
                 case Action_InflictPoison effect: {
-                    prefixStatus += "經過 " + effect.delay.ToString() + "秒後，" + ProcessEffectOverTime(effect.poisonPerSecond, 1f, effect.inflictionTime, EffectColors.POISON) + "\n"; break;
+                    prefixStatus += "經過 " + effect.delay.ToString() + " 秒後，" + ProcessEffectOverTime(effect.poisonPerSecond, 1f, effect.inflictionTime, EffectColors.POISON) + "\n"; break;
                 }
                 case Action_AddOrRemoveThorns effect: {
                     // TODO: Search for thorns amount per applied thorn
