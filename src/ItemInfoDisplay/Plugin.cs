@@ -53,6 +53,19 @@ public partial class Plugin : BaseUnityPlugin{
     private static ConfigEntry<float> configSizeDeltaX;
     private static ConfigEntry<float> configForceUpdateTime;
 
+    /**
+     * 目前有以下物品未處理：
+     * 背包 BACKPACK
+     * 喊話器 MEGAPHONE
+     * 蘆薈 ALOE VERA
+     * 萬靈藥 CURE-ALL
+     * 冬莓 WINTERBERRY
+     * 刺莓 PRICKLEBERRY
+     * 傳送羅盤 WARP COMPASS
+     * 辣椒 SCORCHBERRY
+     * 防曬乳 SUNSCREEN
+     */
+
     private void Awake(){
         Log = Logger;
         lastKnownSinceItemAttach = 0f;
