@@ -52,26 +52,31 @@ public partial class Plugin : BaseUnityPlugin{
     private static ConfigEntry<float> configLineSpacing;
     private static ConfigEntry<float> configSizeDeltaX;
     private static ConfigEntry<float> configForceUpdateTime;
+    private static ConfigEntry<bool> configIsEnableIID;
 
     private void Awake(){
         Log = Logger;
         lastKnownSinceItemAttach = 0f;
         hasChanged = true;
 
-        configFontSize = ((BaseUnityPlugin)this).Config.Bind<float>("ItemInfoDisplay", "字體大小", 20f, "調整物品描述文字的字體大小。");
-        configOutlineWidth = ((BaseUnityPlugin)this).Config.Bind<float>("ItemInfoDisplay", "輪廓寬度", 0.08f, "調整物品描述文字的輪廓寬度。");
-        configLineSpacing = ((BaseUnityPlugin)this).Config.Bind<float>("ItemInfoDisplay", "行距", -35f, "調整物品描述文字的行距。");
-        configSizeDeltaX = ((BaseUnityPlugin)this).Config.Bind<float>("ItemInfoDisplay", "大小變化X", 550f, "調整物品描述文字容器的水平長度。增加會將文字向左移動，減少會將文字向右移動。");
-        configForceUpdateTime = ((BaseUnityPlugin)this).Config.Bind<float>("ItemInfoDisplay", "強制更新時間", 1f, "調整物品強制更新的時間（秒）。");
+        configFontSize = ((BaseUnityPlugin)this).Config.Bind<float>("ItemInfoDisplay", "Font Size", 20f, "調整物品描述文字的字體大小。");
+        configOutlineWidth = ((BaseUnityPlugin)this).Config.Bind<float>("ItemInfoDisplay", "Outline Width", 0.08f, "調整物品描述文字的輪廓寬度。");
+        configLineSpacing = ((BaseUnityPlugin)this).Config.Bind<float>("ItemInfoDisplay", "Line Spacing", -35f, "調整物品描述文字的行距。");
+        configSizeDeltaX = ((BaseUnityPlugin)this).Config.Bind<float>("ItemInfoDisplay", "Size Delta X", 550f, "調整物品描述文字容器的水平長度。增加會將文字向左移動，減少會將文字向右移動。");
+        configForceUpdateTime = ((BaseUnityPlugin)this).Config.Bind<float>("ItemInfoDisplay", "Force Update Time", 1f, "調整物品強制更新的時間（秒）。");
+        configIsEnableIID = ((BaseUnityPlugin)this).Config.Bind<bool>("ItemInfoDisplay", "Is Enable ItemInfoDisplay", true, "是否啟用ItemInfoDisplay？");
+
         Harmony.CreateAndPatchAll(typeof(ItemInfoDisplayUpdatePatch));
         Harmony.CreateAndPatchAll(typeof(ItemInfoDisplayEquipPatch));
         Harmony.CreateAndPatchAll(typeof(ItemInfoDisplayFinishCookingPatch));
         Harmony.CreateAndPatchAll(typeof(ItemInfoDisplayReduceUsesRPCPatch));
-        Log.LogInfo($"Plugin {Name} is loaded! (Modified Version by Vocaloid2048)");
+        Log.LogInfo($"Plugin {Name} is loaded! (Modified Version by Vocaloid2048) - Is Enabled? "+ configIsEnableIID.Value);
     }
 
     /**
      * 目前有以下物品未處理：
+     * 能量飲料
+     * 運動飲料
      */
     private static void ProcessItemGameObject(){
         Item item = Character.observedCharacter.data.currentItem; // not sure why this broke after THE MESA update, made no changes (just rebuilt)
@@ -91,7 +96,7 @@ public partial class Plugin : BaseUnityPlugin{
 
         switch (itemGameObj.name) {
             case "Bugle(Clone)": 
-                itemInfoDisplayTextMesh.text += "圍着隊友吹響它吧！\n" + EffectColorLocalName(EffectColors.HEAT) + "然後就會有人過來打扁你（誤</color>"; break;
+                itemInfoDisplayTextMesh.text += "圍着隊友吹響它吧！\n" + EffectColors.HEAT.HexTag() + "然後就會有人過來打扁你（誤</color>"; break;
             case "Pirate Compass(Clone)": 
                 itemInfoDisplayTextMesh.text += EffectColors.INJURY.HexTag() + "指向</color>"+"最近的行李箱\n"; break;
             case "Compass(Clone)":
@@ -457,6 +462,7 @@ public partial class Plugin : BaseUnityPlugin{
         [HarmonyPatch(typeof(CharacterItems), "Update")]
         [HarmonyPostfix]
         private static void ItemInfoDisplayUpdate(CharacterItems __instance){
+            if(configIsEnableIID.Value == false) return;
             try{
                 if (guiManager == null){
                     AddDisplayObject();
