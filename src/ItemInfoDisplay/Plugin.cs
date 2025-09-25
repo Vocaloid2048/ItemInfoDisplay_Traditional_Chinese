@@ -83,8 +83,8 @@ public partial class Plugin : BaseUnityPlugin{
         itemInfoDisplayTextMesh.text = "";
 
         // Text Line Display: Weight
-        // 展示：$1 負重值
-        suffixWeight += EffectColors.HUNGER.HexTag() + PrettyCount((item.carryWeight + Mathf.Min(Ascents.itemWeightModifier, 0)) * 2.5f, 1) + "負重值</color>";
+        // 展示：負重：$1 點
+        suffixWeight += EffectColors.HUNGER.HexTag() + "負重：" + PrettyCount((item.carryWeight + Mathf.Min(Ascents.itemWeightModifier, 0)) * 2.5f, 1) + "點</color>\n";
 
         switch (itemGameObj.name) {
             case "Bugle(Clone)": 
@@ -108,20 +108,20 @@ public partial class Plugin : BaseUnityPlugin{
                     isConsumable = true; break;
                 }
                 case Action_RestoreHunger effect: {
-                    prefixStatus += ProcessEffect((effect.restorationAmount * -1f), EffectColors.HUNGER); break;
+                    prefixStatus += ProcessEffect((effect.restorationAmount * -1f), EffectColors.HUNGER) + "\n"; break;
                 }
                 case Action_GiveExtraStamina effect: {
-                    prefixStatus += ProcessEffect(effect.amount, EffectColors.EXTRA_STAMINA); break;
+                    prefixStatus += ProcessEffect(effect.amount, EffectColors.EXTRA_STAMINA) + "\n"; break;
                 }
                 case Action_InflictPoison effect: {
-                    prefixStatus += "經過 " + effect.delay.ToString() + "秒後，" + ProcessEffectOverTime(effect.poisonPerSecond, 1f, effect.inflictionTime, EffectColors.POISON); break;
+                    prefixStatus += "經過 " + effect.delay.ToString() + "秒後，" + ProcessEffectOverTime(effect.poisonPerSecond, 1f, effect.inflictionTime, EffectColors.POISON) + "\n"; break;
                 }
                 case Action_AddOrRemoveThorns effect: {
                     // TODO: Search for thorns amount per applied thorn
-                    prefixStatus += ProcessEffect((effect.thornCount * 0.05f), EffectColors.THORNS); break;
+                    prefixStatus += ProcessEffect((effect.thornCount * 0.05f), EffectColors.THORNS) + "\n"; break;
                 }
                 case Action_ModifyStatus effect: {
-                    prefixStatus += ProcessEffect(effect.changeAmount, GetEffectColorsByStr(effect.statusType.ToString())); break;
+                    prefixStatus += ProcessEffect(effect.changeAmount, GetEffectColorsByStr(effect.statusType.ToString())) + "\n"; break;
                 }
                 case Action_ApplyMassAffliction effect: {
                     suffixAfflictions += "<#CCCCCC>附近的玩家將會收到：</color>\n";
@@ -141,15 +141,16 @@ public partial class Plugin : BaseUnityPlugin{
                 }
                 case Action_ClearAllStatus effect: {
                     itemInfoDisplayTextMesh.text += EffectColors.ITEM_INFO_DISPLAY_POSITIVE.HexTag() + "清理所有狀態</color>";
-                    itemInfoDisplayTextMesh.text += (effect.excludeCurse ? "（除了" + EffectColors.CURSE.HexTag() + "詛咒</color>）\n" : "\n");
+                    itemInfoDisplayTextMesh.text += (effect.excludeCurse ? "（除了" + EffectColors.CURSE.HexTag() + "詛咒</color>\n" : "\n");
                     
                     if (effect.otherExclusions.Count > 0) {
                         foreach (CharacterAfflictions.STATUSTYPE exclusion in effect.otherExclusions) {
                             EffectColors eff = GetEffectColorsByStr(exclusion.ToString());
-                            itemInfoDisplayTextMesh.text += ", " + eff + EffectColorLocalName(eff) + "</color>";
+                            if(eff == EffectColors.CRAB) continue;
+                               itemInfoDisplayTextMesh.text += "、" + eff.HexTag() + EffectColorLocalName(eff) + "</color>";
                         }
+                        itemInfoDisplayTextMesh.text += "）";
                     }
-                    itemInfoDisplayTextMesh.text = itemInfoDisplayTextMesh.text.Replace(", <#E13542>CRAB</color>", "") + "\n";
                     break;
                 }
                 case Action_ConsumeAndSpawn effect: {
@@ -160,7 +161,7 @@ public partial class Plugin : BaseUnityPlugin{
                 }
                 case Action_ReduceUses effect: {
                     OptionableIntItemData uses = (OptionableIntItemData)item.data.data[DataEntryKey.ItemUses];
-                    if (uses.HasData && uses.Value > 1) { suffixUses += "   " + uses.Value + " USES"; }
+                    if (uses.HasData && uses.Value > 1) { suffixUses += "剩餘 " + uses.Value + " 次使用次數"; }
                     break;
                 }
                 case Lantern lantern: {
@@ -192,14 +193,18 @@ public partial class Plugin : BaseUnityPlugin{
                     suffixAfflictions += "<#CCCCCC>發射一支飛鏢，造成以下效果：</color>\n";
                     for (int j = 0; j < effect.afflictionsOnHit.Length; j++){
                         suffixAfflictions += ProcessAffliction(effect.afflictionsOnHit[j]);
-                        if (suffixAfflictions.EndsWith('\n')){
-                            suffixAfflictions = suffixAfflictions.Remove(suffixAfflictions.Length - 1);
-                        }
-                        suffixAfflictions += ",\n";
+                        /*
+                           if (suffixAfflictions.EndsWith('\n')){
+                               suffixAfflictions = suffixAfflictions.Remove(suffixAfflictions.Length - 1);
+                           }
+                         */
+                        suffixAfflictions += "，\n";
                     }
-                    if (suffixAfflictions.EndsWith('\n')){
-                        suffixAfflictions = suffixAfflictions.Remove(suffixAfflictions.Length - 2);
-                    }
+                    /*
+                       if (suffixAfflictions.EndsWith('\n')){
+                           suffixAfflictions = suffixAfflictions.Remove(suffixAfflictions.Length - 2);
+                       }
+                     */
                     suffixAfflictions += "\n";
                     break;
                 }
@@ -272,10 +277,10 @@ public partial class Plugin : BaseUnityPlugin{
                         TimeEvent effect2TimeEvent = effect2.GetComponent<TimeEvent>();
                         RemoveAfterSeconds effect2RemoveAfterSeconds = effect2.GetComponent<RemoveAfterSeconds>();
                         itemInfoDisplayTextMesh.text += EffectColors.HUNGER.HexTag() + "丟出</color>後會釋放出氣體，效果為：\n";
-                        itemInfoDisplayTextMesh.text += ProcessEffect(Mathf.Round(effect1AOE.statusAmount * 0.9f * 40f) / 40f, GetEffectColorsByStr(effect1AOE.statusType.ToString()));
-                        itemInfoDisplayTextMesh.text += ProcessEffectOverTime(Mathf.Round(effect2AOE.statusAmount * (1f / effect2TimeEvent.rate) * 40f) / 40f, 1f, effect2RemoveAfterSeconds.seconds, GetEffectColorsByStr(effect2AOE.statusType.ToString()));
+                        itemInfoDisplayTextMesh.text += ProcessEffect(Mathf.Round(effect1AOE.statusAmount * 0.9f * 40f) / 40f, GetEffectColorsByStr(effect1AOE.statusType.ToString())) + "\n";
+                        itemInfoDisplayTextMesh.text += ProcessEffectOverTime(Mathf.Round(effect2AOE.statusAmount * (1f / effect2TimeEvent.rate) * 40f) / 40f, 1f, effect2RemoveAfterSeconds.seconds, GetEffectColorsByStr(effect2AOE.statusType.ToString())) + "\n";
                         if (effect2AOEs.Length > 1) {
-                            itemInfoDisplayTextMesh.text += ProcessEffectOverTime(Mathf.Round(effect2AOEs[1].statusAmount * (1f / effect2TimeEvent.rate) * 40f) / 40f, 1f, (effect2RemoveAfterSeconds.seconds + 1f), GetEffectColorsByStr(effect2AOEs[1].statusType.ToString()));
+                            itemInfoDisplayTextMesh.text += ProcessEffectOverTime(Mathf.Round(effect2AOEs[1].statusAmount * (1f / effect2TimeEvent.rate) * 40f) / 40f, 1f, (effect2RemoveAfterSeconds.seconds + 1f), GetEffectColorsByStr(effect2AOEs[1].statusType.ToString())) + "\n";
                         }
                     } else if (effect.instantiateOnBreak.name.Equals("ShelfShroomSpawn")) {
                         itemInfoDisplayTextMesh.text += EffectColors.HUNGER.HexTag() + "丟出</color>後會生成一個平台\n";
@@ -332,7 +337,7 @@ public partial class Plugin : BaseUnityPlugin{
                     itemInfoDisplayTextMesh.text += "傳送到" + effect.segmentToWarpTo.ToString().ToUpper() + "\n"; break;
                 }
                 case Parasol effect: {
-                    itemInfoDisplayTextMesh.text += "打開遮陽傘來減緩下降速度\n"; break;
+                    itemInfoDisplayTextMesh.text += "打開遮陽傘來減緩下降速度\n還能在台地避免太陽直射造成"+EffectColors.HEAT.HexTag()+EffectColorLocalName(EffectColors.HEAT)+"傷害\n"; break;
                 }
                 case Frisbee effect: {
                     itemInfoDisplayTextMesh.text += "把它" + EffectColors.HUNGER.HexTag() + "丟出去</color>\n"; break;
@@ -349,7 +354,7 @@ public partial class Plugin : BaseUnityPlugin{
                     if (configForceUpdateTime.Value <= 1f) {
                         float effectPoison = Mathf.Max(0.5f, (1f - item.holderCharacter.refs.afflictions.statusSum + 0.05f)) * 100f;
                         itemInfoDisplayTextMesh.text += "如果蠍子活着的話會" + EffectColors.POISON.HexTag() + "螫</color>你\n在" + EffectColors.HEAT.HexTag() + "烤熟</color>後會" + EffectColors.HEAT.HexTag() + "死掉</color>\n\n"
-                            + "<#CCCCCC>每被螫一次會持續</color>" + EffectColors.POISON.HexTag() + PrettyCount(effect.totalPoisonTime, 1) + "秒</color>獲得"
+                            + "<#CCCCCC>每被螫一次會持續</color>" + EffectColors.POISON.HexTag() + PrettyCount(effect.totalPoisonTime, 1) + "秒</color>，共獲得"
                             + PrettyCount(effectPoison, 1) + " 點毒素</color>\n"
                             + "<#CCCCCC>(若目前十分健康會造成更多傷害)</color>\n";
                     } else {
@@ -390,19 +395,19 @@ public partial class Plugin : BaseUnityPlugin{
                             suffixCooked += "\n" + EffectColors.EXTRA_STAMINA.HexTag() + "可被烤</color>";
                             break;
                         case 1:
-                            suffixCooked += "   " + EffectColors.EXTRA_STAMINA.HexTag() + "1個烤過的</color>\n" + EffectColors.HUNGER.HexTag() + "可被烤</color>";
+                            suffixCooked += "\n" + EffectColors.EXTRA_STAMINA.HexTag() + "烤過 1 次</color>\n - " + EffectColors.HUNGER.HexTag() + "可被烤</color>";
                             break;
                         case 2:
-                            suffixCooked += "   " + EffectColors.HUNGER.HexTag() + "2個烤過的</color>\n" + EffectColors.INJURY.HexTag() + "可被烤</color>";
+                            suffixCooked += "\n" + EffectColors.HUNGER.HexTag() + "烤過 2 次</color>\n - " + EffectColors.INJURY.HexTag() + "可被烤</color>";
                             break;
                         case 3:
-                            suffixCooked += "   " + EffectColors.INJURY.HexTag() + "3個烤過的</color>\n" + EffectColors.POISON.HexTag() + "可被烤</color>";
+                            suffixCooked += "\n" + EffectColors.INJURY.HexTag() + "烤過 3 次</color>\n - " + EffectColors.POISON.HexTag() + "可被烤</color>";
                             break;
                         default: {
                             if (itemCooking.timesCookedLocal >= ItemCooking.COOKING_MAX) {
-                                suffixCooked += "   " + EffectColors.CURSE.HexTag() + itemCooking.timesCookedLocal.ToString() + "個烤過的\n不可被烤</color>";
+                                suffixCooked += "\n" + EffectColors.CURSE.HexTag() + "烤過 " + itemCooking.timesCookedLocal.ToString() + " 次 - 不可被烤</color>";
                             } else if (itemCooking.timesCookedLocal >= 4) {
-                                suffixCooked += "   " + EffectColors.POISON.HexTag() + itemCooking.timesCookedLocal.ToString() + "個烤過的\n可被烤</color>";
+                                suffixCooked += "\n" + EffectColors.POISON.HexTag() + "烤過 " + itemCooking.timesCookedLocal.ToString() + " 次 - 可被烤</color>";
                             }
                             break;
                         }
@@ -413,7 +418,7 @@ public partial class Plugin : BaseUnityPlugin{
         }
 
         if ((prefixStatus.Length > 0) && isConsumable){
-            itemInfoDisplayTextMesh.text = prefixStatus + "\n" + itemInfoDisplayTextMesh.text;
+            itemInfoDisplayTextMesh.text = prefixStatus + itemInfoDisplayTextMesh.text;
         }
         if (suffixAfflictions.Length > 0){
             itemInfoDisplayTextMesh.text += "\n" + suffixAfflictions;
@@ -517,7 +522,7 @@ public partial class Plugin : BaseUnityPlugin{
 
         result += (effect == EffectColors.EXTRA_STAMINA ? EffectColors.ITEM_INFO_DISPLAY_POSITIVE.HexTag() : EffectColors.ITEM_INFO_DISPLAY_NEGATIVE.HexTag());
         result += (amount > 0 ? "獲得</color> " : "移除</color> ");
-        result += effect + PrettyCount(Mathf.Abs(amount) * 100f, 1) + " 點" + EffectColorLocalName(effect);
+        result += effect.HexTag() + PrettyCount(Mathf.Abs(amount) * 100f, 1) + " 點" + EffectColorLocalName(effect);
 
         return result;
     }
@@ -534,7 +539,7 @@ public partial class Plugin : BaseUnityPlugin{
         result += time.ToString() +"秒内合共";
         result += (effect == EffectColors.EXTRA_STAMINA ? EffectColors.ITEM_INFO_DISPLAY_POSITIVE.HexTag() : EffectColors.ITEM_INFO_DISPLAY_NEGATIVE.HexTag());
         result += (amountPerSecond > 0 ? "獲得</color> " : "移除</color> ");
-        result += effect + PrettyCount(Mathf.Abs(amountPerSecond) * time * (1 / rate) * 100f, 1) + " 點" + EffectColorLocalName(effect);
+        result += effect.HexTag() + PrettyCount(Mathf.Abs(amountPerSecond) * time * (1 / rate) * 100f, 1) + " 點" + EffectColorLocalName(effect);
 
         return result;
     }
@@ -599,7 +604,7 @@ public partial class Plugin : BaseUnityPlugin{
                 EffectColors eff = GetEffectColorsByStr(effect.statusType.ToString());
                 result += (eff == EffectColors.EXTRA_STAMINA ? EffectColors.ITEM_INFO_DISPLAY_POSITIVE.HexTag().ToString() : EffectColors.ITEM_INFO_DISPLAY_NEGATIVE.HexTag());
                 result += (effect.statusAmount > 0 ? "獲得</color> " : "移除</color> ");
-                result += eff + PrettyCount(Mathf.Abs(effect.statusAmount) * 100f, 1) + " 點" + EffectColorLocalName(eff) + "</color>\n";
+                result += eff.HexTag() + PrettyCount(Mathf.Abs(effect.statusAmount) * 100f, 1) + " 點" + EffectColorLocalName(eff) + "</color>\n";
                 break;
             }
             /**
@@ -609,7 +614,7 @@ public partial class Plugin : BaseUnityPlugin{
                 Affliction_AdjustDrowsyOverTime effect = (Affliction_AdjustDrowsyOverTime) affliction; // 1.6.a
                 result += PrettyCount(effect.totalTime,1) + " 秒内合共 ";
                 result += (effect.statusPerSecond > 0 ? EffectColors.ITEM_INFO_DISPLAY_POSITIVE.HexTag() + "獲得</color> " : EffectColors.ITEM_INFO_DISPLAY_NEGATIVE.HexTag() + "移除</color> ");
-                result += EffectColors.DROWSY.HexTag() + PrettyCount(Mathf.Round((Mathf.Abs(effect.statusPerSecond) * effect.totalTime * 100f) * 0.4f) / 0.4f, 1) + " 點昏睡效果</color> ";
+                result += EffectColors.DROWSY.HexTag() + PrettyCount(Mathf.Round((Mathf.Abs(effect.statusPerSecond) * effect.totalTime * 100f) * 0.4f) / 0.4f, 1) + " 點昏睡效果</color>\n";
                 break;
             }
             /**
@@ -619,7 +624,7 @@ public partial class Plugin : BaseUnityPlugin{
                 Affliction_AdjustColdOverTime effect = (Affliction_AdjustColdOverTime) affliction;
                 result += PrettyCount(effect.totalTime, 1) + " 秒内合共 ";
                 result += (effect.statusPerSecond > 0 ? EffectColors.ITEM_INFO_DISPLAY_POSITIVE.HexTag() + "獲得</color> " : EffectColors.ITEM_INFO_DISPLAY_NEGATIVE.HexTag() + "移除</color> ");
-                result += EffectColors.COLD.HexTag() + PrettyCount(Mathf.Round((Mathf.Abs(effect.statusPerSecond) * effect.totalTime * 100f) * 0.4f) / 0.4f, 1) + " 點寒冷效果</color> ";
+                result += EffectColors.COLD.HexTag() + PrettyCount(Mathf.Round((Mathf.Abs(effect.statusPerSecond) * effect.totalTime * 100f) * 0.4f) / 0.4f, 1) + " 點寒冷效果</color>\n";
                 break;
             }
             /**
@@ -675,24 +680,24 @@ public partial class Plugin : BaseUnityPlugin{
     }
 
     private static string EffectColorLocalName(EffectColors eff) {
-        switch (eff) {
-            case EffectColors.HUNGER: return "饑餓";
-            case EffectColors.EXTRA_STAMINA: return "額外體力";
-            case EffectColors.INJURY : return "受傷";
-            case EffectColors.CRAB : return "蟹蟹";
-            case EffectColors.POISON : return "中毒";
-            case EffectColors.COLD : return "寒冷";
-            case EffectColors.HEAT : return "高溫";
-            case EffectColors.SLEEPY : return "倦睏";
-            case EffectColors.DROWSY : return "昏睡";
-            case EffectColors.CURSE : return "詛咒";
-            case EffectColors.WEIGHT : return "負重";
-            case EffectColors.THORNS : return "荊棘";
-            case EffectColors.SHIELD : return "護盾";
-            case EffectColors.ITEM_INFO_DISPLAY_POSITIVE : return "正面效果";
-            case EffectColors.ITEM_INFO_DISPLAY_NEGATIVE : return "負面效果";
-            default: return eff.ToString();
-        }
+        return eff switch {
+            EffectColors.HUNGER => "饑餓",
+            EffectColors.EXTRA_STAMINA => "額外體力",
+            EffectColors.INJURY => "受傷",
+            EffectColors.CRAB => "蟹蟹",
+            EffectColors.POISON => "中毒",
+            EffectColors.COLD => "寒冷",
+            EffectColors.HEAT => "高溫",
+            EffectColors.SLEEPY => "倦睏",
+            EffectColors.DROWSY => "昏睡",
+            EffectColors.CURSE => "詛咒",
+            EffectColors.WEIGHT => "負重",
+            EffectColors.THORNS => "荊棘",
+            EffectColors.SHIELD => "護盾",
+            EffectColors.ITEM_INFO_DISPLAY_POSITIVE => "正面效果",
+            EffectColors.ITEM_INFO_DISPLAY_NEGATIVE => "負面效果",
+            _ => eff.ToString(),
+        };
     }
 
     private static string PrettyCount(float num, int dec) {
